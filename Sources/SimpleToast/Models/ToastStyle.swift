@@ -9,6 +9,7 @@ import SwiftUI
 
 /// Customize Alert Appearance
 public struct ToastStyle: Equatable {
+
     ///Get background color
     let backgroundColor: Color?
 
@@ -26,4 +27,18 @@ public struct ToastStyle: Equatable {
 
     /// Get subTitle font
     let subTitleFont: Font?
+
+    public init(backgroundColor: Color? = nil,
+                titleColor: Color? = nil,
+                subtitleColor: Color? = nil,
+                borderColor: Color? = nil,
+                titleFont: Font? = nil,
+                subTitleFont: Font? = nil) {
+        self.backgroundColor = backgroundColor
+        self.titleColor = titleColor
+        self.subtitleColor = subtitleColor
+        self.borderColor = borderColor
+        self.titleFont = titleFont
+        self.subTitleFont = subTitleFont
+    }
 }

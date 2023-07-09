@@ -27,7 +27,7 @@ public struct SimpleToastModifier: ViewModifier {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(
                 mainContainer
-                    .animation(.spring(), value: toast)
+                    .animation(.easeInOut, value: toast)
                     .onTapGesture {
                         onTap?()
                         if tapToDismiss {
@@ -102,8 +102,8 @@ private extension SimpleToastModifier {
     func dismissAlert() {
         withAnimation {
             workItem?.cancel()
-            workItem = nil
             toast = nil
+            workItem = nil
         }
     }
 }

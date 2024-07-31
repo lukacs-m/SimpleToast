@@ -80,8 +80,9 @@ private extension SimpleToastModifier {
             return
         }
 
-        UIImpactFeedbackGenerator(style: .light)
-            .impactOccurred()
+        if toast.hapticFeedback {
+            hapticFeedback()
+        }
 
         guard toast.type != .loading else {
             tapToDismiss = false
@@ -105,5 +106,14 @@ private extension SimpleToastModifier {
             toast = nil
             workItem = nil
         }
+    }
+
+    func hapticFeedback() {
+#if os(macOS)
+        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .default)
+        #else
+        UIImpactFeedbackGenerator(style: .light)
+            .impactOccurred()
+#endif
     }
 }

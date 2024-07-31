@@ -24,6 +24,7 @@ public struct SimpleToast: View, Equatable {
     ///Customize your alert appearance
      let style: ToastStyle?
 
+    let hapticFeedback: Bool
 
     ///Full init
     public init(displayMode: DisplayMode = .center,
@@ -31,6 +32,7 @@ public struct SimpleToast: View, Equatable {
                 title: String? = nil,
                 subTitle: String? = nil,
                 duration: TimeInterval = 2,
+                hapticFeedback: Bool = true,
                 style: ToastStyle? = nil) {
         self.displayMode = displayMode
         self.type = type
@@ -38,6 +40,7 @@ public struct SimpleToast: View, Equatable {
         self.subTitle = subTitle
         self.duration = duration
         self.style = style
+        self.hapticFeedback = hapticFeedback
     }
 
     ///Body init determine by `displayMode`

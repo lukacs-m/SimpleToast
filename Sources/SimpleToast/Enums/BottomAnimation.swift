@@ -7,6 +7,6 @@
 
 import Foundation
 
-public enum BottomAnimation {
+public enum BottomAnimation: Sendable, Hashable {
     case slide, pop
 }

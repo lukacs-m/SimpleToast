@@ -8,24 +8,29 @@
 import SwiftUI
 
 public struct SimpleToastModifier: ViewModifier {
-    @Binding var toast: SimpleToast?
-
-    ///Tap to dismiss alert
-    @State var tapToDismiss: Bool = true
-
-    let offsetY: CGFloat
+    @State private var workItem: DispatchWorkItem?
+    @State private var tapToDismiss: Bool = true
+    @Binding private var toast: SimpleToast?
 
     ///Completion block returns `true` after dismiss
-    var onTap: (() -> ())? = nil
-    var completion: (() -> ())? = nil
+    private let onTap: (() -> ())?
+    private let completion: (() -> ())?
 
-    @State private var workItem: DispatchWorkItem?
+    init(toast: Binding<SimpleToast?>,
+         tapToDismiss: Bool = true,
+         onTap: (() -> Void)? = nil,
+         completion: (() -> Void)? = nil) {
+        self._toast = toast
+        self.tapToDismiss = tapToDismiss
+        self.onTap = onTap
+        self.completion = completion
+    }
 
     @ViewBuilder
     public func body(content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(
+            .overlay(alignment: toast?.displayMode.alignment ?? .bottom) {
                 mainContainer
                     .animation(.easeInOut, value: toast)
                     .onTapGesture {
@@ -37,8 +42,8 @@ public struct SimpleToastModifier: ViewModifier {
                     .onDisappear {
                         completion?()
                     }
-            )
-            .onChange(of: toast) { value in
+            }
+            .onChange(of: toast) {
               showToast()
             }
     }
@@ -46,32 +51,11 @@ public struct SimpleToastModifier: ViewModifier {
 
 private extension SimpleToastModifier {
     @ViewBuilder
-    var mainContainer: some View{
+    var mainContainer: some View {
         if let toast {
-            switch toast.displayMode {
-            case .center:
-                VStack{
-                    Spacer()
-                    toast
-                        .offset(y: offsetY)
-                    Spacer()
-                }
-                .transition(AnyTransition.scale(scale: 0.8).combined(with: .opacity))
-            case .top:
-                VStack{
-                    toast
-                        .offset(y: offsetY)
-                    Spacer()
-                }
-                .transition(AnyTransition.move(edge: .top).combined(with: .opacity))
-            case .bottom:
-                VStack {
-                    Spacer()
-                    toast
-                        .offset(y: offsetY)
-                }
-                .transition(toast.displayMode == .bottom(.slide) ? AnyTransition.slide : AnyTransition.move(edge: .bottom))
-            }
+            toast.body
+                .offset(y: toast.offsetY)
+                .transition(toast.displayMode.transition)
         }
     }
 
@@ -80,32 +64,33 @@ private extension SimpleToastModifier {
             return
         }
 
-        if toast.hapticFeedback {
+        if toast.configuration.hapticFeedback {
             hapticFeedback()
         }
 
-        guard toast.type != .loading else {
+        if toast.configuration.type == .loading {
             tapToDismiss = false
+        }
+        
+        guard toast.configuration.duration > 0 else {
             return
         }
 
-        if toast.duration > 0 {
-            workItem?.cancel()
-
-            let task = DispatchWorkItem {
-                dismissAlert()
-            }
-            workItem = task
-            DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration, execute: task)
+        workItem?.cancel()
+        
+        let task = DispatchWorkItem {
+            dismissAlert()
         }
+        workItem = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + toast.configuration.duration, execute: task)
     }
 
     func dismissAlert() {
         withAnimation {
-            workItem?.cancel()
             toast = nil
-            workItem = nil
         }
+        workItem?.cancel()
+        workItem = nil
     }
 
     func hapticFeedback() {

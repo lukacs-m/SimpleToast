@@ -96,7 +96,7 @@ private extension SimpleToastModifier {
     func hapticFeedback() {
 #if os(macOS)
         NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .default)
-        #else
+        #elseif os(iOS)
         UIImpactFeedbackGenerator(style: .light)
             .impactOccurred()
 #endif

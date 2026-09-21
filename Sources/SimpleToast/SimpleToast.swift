@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct ToastConfiguration: Equatable {
+public struct ToastConfiguration: Sendable {
     public let type: ToastType
     public let duration: TimeInterval
     public let hapticFeedback: Bool
@@ -18,7 +18,7 @@ public struct ToastConfiguration: Equatable {
     }
 }
 
-public struct SimpleToast: Equatable, Identifiable {
+public struct SimpleToast: Equatable, Identifiable, Sendable {
     
     public let id: String
     
@@ -54,6 +54,11 @@ public struct SimpleToast: Equatable, Identifiable {
         self.configuration = configuration
     }
 
+    /// Toasts are compared by identity: two toasts with the same `id` are the same toast.
+    public static func == (lhs: SimpleToast, rhs: SimpleToast) -> Bool {
+        lhs.id == rhs.id
+    }
+
     ///Body init determine by `displayMode`
     @MainActor
     public var body: some View {
@@ -87,18 +92,17 @@ private extension SimpleToast {
     @ViewBuilder
     var imageDisplay: some View {
         switch configuration.type {
-        case let.complete(color):
+        case let .complete(color):
             Image(systemName: "checkmark")
                 .resizable()
                 .scaledToFit()
-                .font(configuration.style.titleFont)
-                .frame(maxWidth: 20, maxHeight: 20, alignment: .center)
+                .frame(width: 20, height: 20)
                 .foregroundStyle(color)
         case let .error(color):
             Image(systemName: "xmark")
                 .resizable()
-                .frame(width: 20, height: 20, alignment: .center)
                 .scaledToFit()
+                .frame(width: 20, height: 20)
                 .foregroundStyle(color)
         case let .image(image):
             image

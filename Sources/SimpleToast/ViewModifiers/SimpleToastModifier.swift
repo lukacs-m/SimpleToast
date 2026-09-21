@@ -8,13 +8,13 @@
 import SwiftUI
 
 public struct SimpleToastModifier: ViewModifier {
-    @State private var workItem: DispatchWorkItem?
-    @State private var tapToDismiss: Bool = true
     @Binding private var toast: SimpleToast?
 
-    ///Completion block returns `true` after dismiss
-    private let onTap: (() -> ())?
-    private let completion: (() -> ())?
+    private let tapToDismiss: Bool
+    private let onTap: (() -> Void)?
+
+    ///Completion block called after dismiss
+    private let completion: (() -> Void)?
 
     init(toast: Binding<SimpleToast?>,
          tapToDismiss: Bool = true,
@@ -26,7 +26,6 @@ public struct SimpleToastModifier: ViewModifier {
         self.completion = completion
     }
 
-    @ViewBuilder
     public func body(content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -35,16 +34,26 @@ public struct SimpleToastModifier: ViewModifier {
                     .animation(.easeInOut, value: toast)
                     .onTapGesture {
                         onTap?()
-                        if tapToDismiss {
-                            dismissAlert()
+                        if canTapToDismiss {
+                            dismissToast()
                         }
                     }
                     .onDisappear {
                         completion?()
                     }
             }
-            .onChange(of: toast) {
-              showToast()
+            .sensoryFeedback(trigger: toast) { _, newToast in
+                guard let newToast, newToast.configuration.hapticFeedback else {
+                    return nil
+                }
+#if os(macOS)
+                return .alignment
+#else
+                return .impact(weight: .light)
+#endif
+            }
+            .task(id: toast) {
+                await dismissAfterDuration()
             }
     }
 }
@@ -59,46 +68,27 @@ private extension SimpleToastModifier {
         }
     }
 
-    func showToast() {
-        guard let toast, workItem == nil else {
-            return
-        }
-
-        if toast.configuration.hapticFeedback {
-            hapticFeedback()
-        }
-
-        if toast.configuration.type == .loading {
-            tapToDismiss = false
-        }
-        
-        guard toast.configuration.duration > 0 else {
-            return
-        }
-
-        workItem?.cancel()
-        
-        let task = DispatchWorkItem {
-            dismissAlert()
-        }
-        workItem = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + toast.configuration.duration, execute: task)
+    /// Loading toasts can only be dismissed programmatically or by their duration.
+    var canTapToDismiss: Bool {
+        tapToDismiss && toast?.configuration.type != .loading
     }
 
-    func dismissAlert() {
+    func dismissAfterDuration() async {
+        guard let toast, toast.configuration.duration > 0 else {
+            return
+        }
+
+        try? await Task.sleep(for: .seconds(toast.configuration.duration))
+
+        guard !Task.isCancelled else {
+            return
+        }
+        dismissToast()
+    }
+
+    func dismissToast() {
         withAnimation {
             toast = nil
         }
-        workItem?.cancel()
-        workItem = nil
-    }
-
-    func hapticFeedback() {
-#if os(macOS)
-        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .default)
-        #elseif os(iOS)
-        UIImpactFeedbackGenerator(style: .light)
-            .impactOccurred()
-#endif
     }
 }

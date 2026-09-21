@@ -26,10 +26,8 @@ public extension View {
 
 extension View {
 
-    /// Choose the alert background
-    /// - Parameter color: Some Color, if `nil` return `.black`/`.white` depends on system theme
-    /// - Returns: some View
-     func textColor(_ color: Color? = nil) -> some View{
-        modifier(TextForegroundModifier(color: color))
+    /// Applies the given text color, or keeps the inherited foreground style when `nil`.
+    func textColor(_ color: Color? = nil) -> some View {
+        foregroundStyle(color.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.foreground))
     }
 }

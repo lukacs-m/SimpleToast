@@ -39,21 +39,14 @@ public enum ToastType: Sendable, Equatable, Identifiable, Hashable {
         }
     }
     
+    // Image is not Hashable, so .image hashes by case only. Equal values still hash equally.
     public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
         switch self {
-        case .complete(let color):
-            hasher.combine("complete")
+        case .complete(let color), .error(let color):
             hasher.combine(color)
-        case .error(let color):
-            hasher.combine("error")
-            hasher.combine(color)
-        case let .image(image):
-            hasher.combine("image")
-            hasher.combine(String(describing: image))
-        case .loading:
-            hasher.combine("loading")
-        case .regular:
-            hasher.combine("regular")
+        case .image, .loading, .regular:
+            break
         }
     }
 }
